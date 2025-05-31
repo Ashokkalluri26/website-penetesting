@@ -41,11 +41,5 @@ flask run
 
 5. Access the application at `http://localhost:5000`
 
-## Default Admin Credentials
-
-- Username: admin
-- Password: admin123
-
 ## Security Note
 
-Please change the default admin credentials after first login for security purposes. 
