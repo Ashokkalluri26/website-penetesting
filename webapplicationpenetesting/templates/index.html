@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Security Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        /* Gradient Backgrounds */
+        .gradient-bg {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+        }
+        .gradient-bg-alt {
+            background: linear-gradient(120deg, #ff9a9e 0%, #fad0c4 100%);
+        }
+        .gradient-bg-dark {
+            background: linear-gradient(120deg, #4b6cb7 0%, #182848 100%);
+        }
+        
+        /* Button Styles */
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Card Animations */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px) rotate(1deg);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Scan Animation */
+        .scan-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Severity Colors */
+        .severity-high { 
+            background: linear-gradient(120deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+        }
+        .severity-medium { 
+            background: linear-gradient(120deg, #f7971e 0%, #ffd200 100%);
+            color: white;
+        }
+        .severity-low { 
+            background: linear-gradient(120deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        /* Navigation Animation */
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        /* Feature Card Animations */
+        .feature-card {
+            transition: all 0.5s ease;
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Progress Bar Animation */
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+            background: linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%);
+        }
+        
+        /* Floating Animation */
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        /* Shine Effect */
+        .shine {
+            position: relative;
+            overflow: hidden;
+        }
+        .shine::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(30deg);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) rotate(30deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('index') }}" class="text-xl font-bold text-gray-800 nav-link">Web Security Scanner</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin %}
+                            <a href="{{ url_for('admin') }}" class="text-gray-600 hover:text-gray-800 nav-link">Admin Panel</a>
+                        {% endif %}
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-600 hover:text-gray-800 nav-link">Dashboard</a>
+                        <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-gray-800 nav-link">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="text-gray-600 hover:text-gray-800 nav-link">Login</a>
+                        <a href="{{ url_for('register') }}" class="text-gray-600 hover:text-gray-800 nav-link">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="text-center mb-12 animate__animated animate__fadeIn">
+            <h1 class="text-5xl font-bold text-gray-800 mb-4 float">Web Security Scanner</h1>
+            <p class="text-xl text-gray-600 mb-8">Protect your website with our comprehensive security scanning tool</p>
+            
+            {% if not current_user.is_authenticated %}
+                <div class="space-x-4">
+                    <a href="{{ url_for('login') }}" class="btn-hover inline-block gradient-bg text-white font-bold py-3 px-8 rounded-lg shine">
+                        Get Started
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn-hover inline-block bg-white text-gray-800 font-bold py-3 px-8 rounded-lg border-2 border-gray-300">
+                        Create Account
+                    </a>
+                </div>
+            {% else %}
+                <a href="{{ url_for('dashboard') }}" class="btn-hover inline-block gradient-bg text-white font-bold py-3 px-8 rounded-lg shine">
+                    Go to Dashboard
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Features Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+            <div class="feature-card p-6 animate__animated animate__fadeInUp">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Security Scanning</h3>
+                <p class="text-gray-600">Comprehensive security checks for your website including SSL, headers, and more.</p>
+            </div>
+            <div class="feature-card p-6 animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Real-time Results</h3>
+                <p class="text-gray-600">Get instant feedback with our real-time scanning and reporting system.</p>
+            </div>
+            <div class="feature-card p-6 animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Detailed Reports</h3>
+                <p class="text-gray-600">Access detailed security reports with actionable recommendations.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-lg mt-16">
+        <div class="container mx-auto px-4 py-8">
+            <div class="text-center text-gray-600">
+                <p>&copy; 2024 Web Security Scanner. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-12 animate__animated animate__fadeIn">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Web Security Scanner</h1>
+            <p class="text-gray-600">Enter a URL to start scanning for security vulnerabilities</p>
+        </div>
+
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6 animate__animated animate__fadeInUp">
+            <div class="mb-6">
+                <input type="url" id="urlInput" 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Enter website URL (e.g., https://example.com)">
+            </div>
+            <button id="scanButton" 
+                    class="w-full gradient-bg text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity scan-animation">
+                Start Scan
+            </button>
+        </div>
+
+        <div id="progressContainer" class="max-w-2xl mx-auto mt-8 hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Scan Progress</h2>
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                    <div id="progressBar" class="gradient-bg h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-center text-gray-600">Initializing scan...</p>
+            </div>
+        </div>
+
+        <div id="summaryContainer" class="max-w-2xl mx-auto mt-8 hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Scan Summary</h2>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="summary-card bg-red-100 p-4 rounded-lg text-center">
+                        <h3 class="font-bold text-red-800">High</h3>
+                        <p id="highCount" class="text-2xl font-bold text-red-600">0</p>
+                    </div>
+                    <div class="summary-card bg-yellow-100 p-4 rounded-lg text-center">
+                        <h3 class="font-bold text-yellow-800">Medium</h3>
+                        <p id="mediumCount" class="text-2xl font-bold text-yellow-600">0</p>
+                    </div>
+                    <div class="summary-card bg-green-100 p-4 rounded-lg text-center">
+                        <h3 class="font-bold text-green-800">Low</h3>
+                        <p id="lowCount" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsContainer" class="max-w-2xl mx-auto mt-8 hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Scan Results</h2>
+                <div id="findingsList" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scanButton = document.getElementById('scanButton');
+        const urlInput = document.getElementById('urlInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const summaryContainer = document.getElementById('summaryContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const findingsList = document.getElementById('findingsList');
+        const highCount = document.getElementById('highCount');
+        const mediumCount = document.getElementById('mediumCount');
+        const lowCount = document.getElementById('lowCount');
+
+        scanButton.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                alert('Please enter a valid URL');
+                return;
+            }
+
+            // Reset UI
+            progressContainer.classList.remove('hidden');
+            summaryContainer.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            findingsList.innerHTML = '';
+            progressBar.style.width = '0%';
+            scanButton.disabled = true;
+
+            try {
+                const response = await fetch('/start-scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await response.json();
+                
+                if (data.scan_id) {
+                    pollScanStatus(data.scan_id);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while starting the scan');
+                scanButton.disabled = false;
+            }
+        });
+
+        async function pollScanStatus(scanId) {
+            const poll = async () => {
+                try {
+                    const response = await fetch(`/scan-status/${scanId}`);
+                    const data = await response.json();
+
+                    progressBar.style.width = `${data.progress}%`;
+                    progressText.textContent = `Scanning... ${data.progress}%`;
+
+                    if (data.status === 'completed') {
+                        showSummary(data.summary);
+                        showResults(data.findings);
+                        scanButton.disabled = false;
+                    } else if (data.status === 'error') {
+                        alert('Scan failed: ' + data.error);
+                        scanButton.disabled = false;
+                    } else {
+                        setTimeout(poll, 1000);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while checking scan status');
+                    scanButton.disabled = false;
+                }
+            };
+
+            poll();
+        }
+
+        function showSummary(summary) {
+            summaryContainer.classList.remove('hidden');
+            highCount.textContent = summary.high;
+            mediumCount.textContent = summary.medium;
+            lowCount.textContent = summary.low;
+        }
+
+        function showResults(findings) {
+            resultsContainer.classList.remove('hidden');
+            findingsList.innerHTML = '';
+
+            if (findings.length === 0) {
+                findingsList.innerHTML = `
+                    <div class="p-4 bg-green-100 rounded-lg">
+                        <p class="text-green-800">No security issues found!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort findings by severity
+            const severityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+            findings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+            findings.forEach(finding => {
+                const severityClass = `severity-${finding.severity.toLowerCase()}`;
+                const findingElement = document.createElement('div');
+                findingElement.className = `p-4 rounded-lg ${severityClass} text-white animate__animated animate__fadeIn`;
+                findingElement.innerHTML = `
+                    <h3 class="font-bold">${finding.title}</h3>
+                    <p class="mt-2">${finding.description}</p>
+                    <span class="inline-block mt-2 px-2 py-1 bg-white bg-opacity-20 rounded">${finding.severity}</span>
+                `;
+                findingsList.appendChild(findingElement);
+            });
+        }
+    </script>
+</body>
+</html> 

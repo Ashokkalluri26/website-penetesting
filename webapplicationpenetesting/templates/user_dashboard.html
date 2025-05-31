@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Web Security Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        /* Gradient Backgrounds */
+        .gradient-bg {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+        }
+        .gradient-bg-alt {
+            background: linear-gradient(120deg, #ff9a9e 0%, #fad0c4 100%);
+        }
+        .gradient-bg-dark {
+            background: linear-gradient(120deg, #4b6cb7 0%, #182848 100%);
+        }
+        
+        /* Card Animation */
+        .scan-card {
+            transition: all 0.3s ease;
+        }
+        .scan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Navigation Animation */
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        /* Button Styles */
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('index') }}" class="text-xl font-bold text-gray-800 nav-link">Web Security Scanner</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('admin') }}" class="text-gray-600 hover:text-gray-800 nav-link">Admin Panel</a>
+                    <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-gray-800 nav-link">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-12 animate__animated animate__fadeIn">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">User Dashboard</h1>
+            <p class="text-gray-600">Viewing dashboard for {{ user.username }}</p>
+        </div>
+
+        <!-- User Info Card -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8 animate__animated animate__fadeInUp">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">{{ user.username }}</h2>
+                    <p class="text-gray-600">{{ user.email }}</p>
+                </div>
+                <div class="flex space-x-4">
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold {{ 'bg-blue-100 text-blue-800' if user.is_admin else 'bg-gray-100 text-gray-800' }}">
+                        {{ 'Admin' if user.is_admin else 'User' }}
+                    </span>
+                    {% if not user.is_admin %}
+                    <button onclick="makeAdmin('{{ user.id }}')" 
+                            class="btn-hover bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+                        Make Admin
+                    </button>
+                    {% else %}
+                    <button onclick="removeAdmin('{{ user.id }}')"
+                            class="btn-hover bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+                        Remove Admin
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-4">
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold">Last Login:</span> {{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}
+                </p>
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold">Total Scans:</span> {{ scans|length }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Scan History -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for scan in scans %}
+            <div class="scan-card bg-white rounded-lg shadow-lg p-6 animate__animated animate__fadeInUp">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">{{ scan.url }}</h3>
+                    <p class="text-sm text-gray-600">{{ scan.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-sm font-semibold text-red-600">High: {{ scan.summary.high }}</span>
+                        <span class="text-sm font-semibold text-yellow-600">Medium: {{ scan.summary.medium }}</span>
+                        <span class="text-sm font-semibold text-green-600">Low: {{ scan.summary.low }}</span>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button onclick="viewScanDetails('{{ scan.id }}')"
+                            class="btn-hover w-full bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+                        View Details
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function makeAdmin(userId) {
+            if (confirm('Are you sure you want to make this user an admin? This will remove your admin privileges.')) {
+                fetch(`/api/user/${userId}/make-admin`, {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.error || 'Failed to make user admin');
+                    }
+                });
+            }
+        }
+
+        function removeAdmin(userId) {
+            if (confirm('Are you sure you want to remove admin privileges from this user?')) {
+                fetch(`/api/user/${userId}/remove-admin`, {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.error || 'Failed to remove admin privileges');
+                    }
+                });
+            }
+        }
+
+        function viewScanDetails(scanId) {
+            // Implement scan details view
+            alert('Scan details view to be implemented');
+        }
+    </script>
+</body>
+</html> 
