@@ -41,5 +41,3 @@ flask run
 
 5. Access the application at `http://localhost:5000`
 
-## Security Note
-
